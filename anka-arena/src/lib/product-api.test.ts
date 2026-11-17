@@ -18,6 +18,7 @@ import {
   blockedReason,
   describeApiError,
   expiresSoon,
+  hasNoLicense,
   formatWait,
   isProLicense,
   isTokenActive,
@@ -138,6 +139,9 @@ describe('license helpers', () => {
   it('explains why a screen is blocked', () => {
     expect(blockedReason(lic())).toBeNull();
     expect(blockedReason(lic({ edition: 'community', state: 'invalid', holder: null }))).toBe('invalid');
+    expect(blockedReason(lic({ edition: 'community', state: 'invalid', holder: null, license_id: null }))).toBe('none');
+    expect(hasNoLicense(lic({ state: 'invalid', license_id: null }))).toBe(true);
+    expect(hasNoLicense(lic({ state: 'invalid' }))).toBe(false);
     expect(blockedReason(lic({ edition: 'community', state: 'expired' }))).toBe('expired');
     expect(blockedReason(lic({ edition: 'community', state: 'valid' }))).toBe('none');
     expect(blockedReason(undefined)).toBeNull();

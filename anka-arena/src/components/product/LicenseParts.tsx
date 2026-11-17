@@ -5,7 +5,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { expiresSoon, type LicenseStatus } from '@/lib/product-api';
+import { expiresSoon, hasNoLicense, type LicenseStatus } from '@/lib/product-api';
 import { Notice } from './shared';
 import { useLicense } from './hooks';
 
@@ -47,11 +47,17 @@ export function LicenseCard({ status }: { status: LicenseStatus }) {
   const t = useTranslations('Product');
   const dash = '—';
   const expires = status.expires_at ? status.expires_at.slice(0, 10) : dash;
+  // Nothing installed yet reads as "no license", not as a broken one.
+  const none = hasNoLicense(status);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 10 }}>
         <Field label={t('lic_edition')} value={status.edition === 'pro' ? t('lic_edition_pro') : t('lic_edition_community')} />
-        <Field label={t('lic_state')} value={t(`lic_state_${status.state}`)} color={STATE_COLOR[status.state]} />
+        <Field
+          label={t('lic_state')}
+          value={none ? t('lic_state_none') : t(`lic_state_${status.state}`)}
+          color={none ? 'var(--tx-dim)' : STATE_COLOR[status.state]}
+        />
         <Field label={t('lic_holder')} value={status.holder ?? dash} />
         <Field label={t('lic_expires')} value={expires} />
         <Field label={t('lic_days')} value={status.days_remaining == null ? dash : String(status.days_remaining)} />

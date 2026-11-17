@@ -225,11 +225,17 @@ export function expiresSoon(l: LicenseStatus | undefined | null): boolean {
   return l.days_remaining <= EXPIRY_WARNING_DAYS;
 }
 
+/** True when no license document is loaded at all (the server reports it as "invalid" without an id). */
+export function hasNoLicense(l: LicenseStatus | undefined | null): boolean {
+  return !!l && l.state === 'invalid' && !l.license_id;
+}
+
 /** i18n key suffix describing why a screen is blocked; null when it is not. */
 export function blockedReason(l: LicenseStatus | undefined | null): 'none' | 'expired' | 'invalid' | null {
   if (!l) return null;
   if (isProLicense(l)) return null;
   if (l.state === 'expired') return 'expired';
+  if (hasNoLicense(l)) return 'none';
   if (l.state === 'invalid') return 'invalid';
   if (l.edition === 'community') return 'none';
   return 'invalid';

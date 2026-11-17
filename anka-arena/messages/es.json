@@ -2026,6 +2026,7 @@
     "lic_state_grace": "En gracia",
     "lic_state_expired": "Caducada",
     "lic_state_invalid": "No válida",
+    "lic_state_none": "Sin licencia",
     "lic_holder": "Titular",
     "lic_expires": "Caduca",
     "lic_days": "Días restantes",

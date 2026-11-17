@@ -43,7 +43,7 @@ describe('product i18n', () => {
     // dynamic suffixes
     const dyn: Record<string, string[]> = {
       mode_: ['live', 'off', 'unknown'],
-      lic_state_: ['valid', 'grace', 'expired', 'invalid'],
+      lic_state_: ['valid', 'grace', 'expired', 'invalid', 'none'],
       lic_reject_: ['bad_signature', 'malformed', 'wrong_key', 'expired'],
       tok_err_: ['name_required', 'name_too_long', 'profile_invalid', 'days_invalid'],
       tok_profile_: ['read', 'paper', 'live'],

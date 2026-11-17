@@ -2026,6 +2026,7 @@
     "lic_state_grace": "In grace",
     "lic_state_expired": "Expired",
     "lic_state_invalid": "Invalid",
+    "lic_state_none": "No license",
     "lic_holder": "Holder",
     "lic_expires": "Expires",
     "lic_days": "Days left",
