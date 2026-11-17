@@ -101,6 +101,9 @@ func TestPaperEnvelope(t *testing.T) {
 		require.NoError(t, json.Unmarshal(raw, &out))
 		assert.Equal(t, true, out["paper"])
 		assert.Equal(t, map[string]interface{}{"slippage_pct": 0.05}, out["paper_assumptions"])
+		// The paper broker never touched the exchange: no real/sandbox exchange warning.
+		assert.NotContains(t, out, "_warning")
+		assert.NotContains(t, out, "_sandbox_mode")
 	})
 
 	t.Run("a live response is never marked paper", func(t *testing.T) {
@@ -110,6 +113,7 @@ func TestPaperEnvelope(t *testing.T) {
 		require.Nil(t, resp.Error)
 		raw, _ := json.Marshal(resp.Result)
 		assert.NotContains(t, string(raw), "paper")
+		assert.Contains(t, string(raw), "_warning", "a live order keeps the exchange warning")
 	})
 
 	t.Run("broker not ready: paper trade is PAPER_UNAVAILABLE, never the real account", func(t *testing.T) {

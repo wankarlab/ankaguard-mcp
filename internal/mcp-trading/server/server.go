@@ -901,9 +901,12 @@ func (s *MCPServer) handleToolCall(ctx context.Context, req *models.MCPRequest) 
 
 	// Envolver resultado con info de sandbox
 	if err == nil {
-		result = s.sandboxMode.WrapResult(toolName, result)
+		// A call served by the paper broker never reached the exchange, so it
+		// must not carry the real-exchange warning: it is marked as paper only.
 		if _, isPaper := paper.HolderFromContext(ctx); isPaper && toolpolicy.ServedByPaper(toolName, class) {
 			result = s.markPaperResult(result)
+		} else {
+			result = s.sandboxMode.WrapResult(toolName, result)
 		}
 	}
 
