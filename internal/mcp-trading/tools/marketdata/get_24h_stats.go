@@ -42,7 +42,7 @@ func (t *Get24hStatsTool) Execute(ctx context.Context, params map[string]interfa
 
 	// Use ticker data which includes 24h stats
 	return executeWithContext(ctx, func(ctx context.Context) (interface{}, error) {
-		ticker, err := t.client.GetTicker(ctx, exchange, pair)
+		ticker, err := t.client.GetTicker24h(ctx, exchange, pair)
 		if err != nil {
 			return nil, err
 		}

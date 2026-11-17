@@ -23,7 +23,7 @@ func (t *GetTickerTool) Name() string {
 }
 
 func (t *GetTickerTool) Description() string {
-	return "Get current ticker data including last price, bid, ask, volume, and 24h statistics for a trading pair"
+	return "Get current ticker data including last price, bid, ask, 24h base volume, 24h high/low and 24h change (percent) for a trading pair"
 }
 
 func (t *GetTickerTool) InputSchema() map[string]interface{} {
@@ -70,6 +70,6 @@ func (t *GetTickerTool) Execute(ctx context.Context, params map[string]interface
 	}
 
 	return executeWithContext(ctx, func(ctx context.Context) (interface{}, error) {
-		return t.client.GetTicker(ctx, exchange, pair)
+		return t.client.GetTicker24h(ctx, exchange, pair)
 	})
 }
