@@ -251,8 +251,13 @@ func TestLeverageController_ThreadSafety(t *testing.T) {
 		// Write to cache concurrently
 		for i := 0; i < 10; i++ {
 			go func(idx int) {
+				// Writers must hold the controller lock like the production
+				// code does; unguarded writes are a data race that the runtime
+				// aborts on intermittently ("concurrent map writes").
+				lc.cacheMux.Lock()
 				lc.cache[string(rune('A'+idx))] = idx
 				lc.marginCache[string(rune('A'+idx))] = "CROSSED"
+				lc.cacheMux.Unlock()
 				done <- true
 			}(i)
 		}
