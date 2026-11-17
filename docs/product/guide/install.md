@@ -41,7 +41,7 @@ Criterio de la especificación: tras la instalación limpia el servidor responde
 curl -s http://127.0.0.1:10600/health
 ```
 
-La respuesta incluye `status`, `version`, `commit` y `edition`, y nada más.
+La respuesta incluye `status`, `version`, `commit` y `edition`, y nada más. La versión es la de la release que construiste. Para que `commit` muestre el commit exacto, constrúyelo pasando el commit del clon: `PRODUCT_COMMIT=$(git rev-parse --short HEAD) docker compose up -d --build`.
 
 ## Primer uso
 

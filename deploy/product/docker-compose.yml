@@ -21,8 +21,8 @@ services:
       dockerfile: deploy/product/Dockerfile.server
       args:
         EDITION_TAGS: ${EDITION_TAGS:-product,pro}
-        VERSION: ${PRODUCT_VERSION:-dev}
-        COMMIT: ${PRODUCT_COMMIT:-unknown}
+        VERSION: ${PRODUCT_VERSION:-}
+        COMMIT: ${PRODUCT_COMMIT:-}
     restart: unless-stopped
     depends_on:
       gct:

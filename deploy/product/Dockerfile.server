@@ -17,8 +17,11 @@ ARG RUNTIME_IMAGE=debian:bookworm-slim
 
 FROM ${GO_IMAGE} AS build
 ARG EDITION_TAGS=product,pro
-ARG VERSION=dev
-ARG COMMIT=unknown
+# Empty (or the old placeholders dev/unknown) keeps the values compiled into
+# internal/version, so a plain `docker compose up --build` reports the real
+# release instead of "dev".
+ARG VERSION=
+ARG COMMIT=
 ARG BUILD_TIME=unknown
 ENV CGO_ENABLED=1 GOFLAGS=-trimpath
 WORKDIR /src
@@ -31,7 +34,9 @@ RUN go mod download
 COPY . .
 RUN set -eux; \
     PKG=github.com/rantipay/trading-mcp/internal/version; \
-    LDFLAGS="-s -w -X ${PKG}.Version=${VERSION} -X ${PKG}.GitCommit=${COMMIT} -X ${PKG}.BuildTime=${BUILD_TIME}"; \
+    LDFLAGS="-s -w -X ${PKG}.BuildTime=${BUILD_TIME}"; \
+    case "${VERSION}" in ""|dev) ;; *) LDFLAGS="${LDFLAGS} -X ${PKG}.Version=${VERSION}" ;; esac; \
+    case "${COMMIT}" in ""|unknown) ;; *) LDFLAGS="${LDFLAGS} -X ${PKG}.GitCommit=${COMMIT}" ;; esac; \
     mkdir -p /out; \
     go build -tags "${EDITION_TAGS}" -ldflags "${LDFLAGS}" -o /out/trading-mcp-server ./cmd/trading-mcp-server; \
     case ",${EDITION_TAGS}," in \
