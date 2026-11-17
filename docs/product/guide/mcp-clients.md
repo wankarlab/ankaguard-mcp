@@ -4,20 +4,27 @@ El servidor habla MCP sobre **JSON-RPC 2.0 por HTTP** en `POST /mcp`, puerto `10
 
 ## 1. Crear un token de agente
 
-Con una sesión de operador (ver [install.md](install.md)):
+Con una sesión de operador (ver [install.md](install.md)). La API REST (puerto `8081` dentro de Docker) no se publica en el anfitrión, así que la vía depende de la edición:
+
+- **Pro, con consola:** crea el token en la pantalla **Tokens de agente** de la consola, o llama a la API a través de la consola (`http://127.0.0.1:3002`, o tu `CONSOLE_PORT`), que la reenvía al servidor.
+- **Community, sin consola:** llama a la API desde dentro del contenedor del servidor con `docker compose exec server curl ...`, desde `deploy/product/`.
 
 ```bash
-# Iniciar sesión (devuelve {"token": "...", "expires_at": ...}); la sesión dura 12 horas
-curl -s -X POST http://127.0.0.1:8081/api/v1/auth/local/login \
+# Community: iniciar sesión (devuelve {"token": "...", "expires_at": ...}); la sesión dura 12 horas
+docker compose exec -T server curl -s -X POST http://127.0.0.1:8081/api/v1/auth/local/login \
   -H 'Content-Type: application/json' -d '{"password": "<tu contraseña>"}'
 
-# Crear un token de agente de perfil paper
-curl -s -X POST http://127.0.0.1:8081/api/v1/auth/local/tokens \
+# Community: crear un token de agente de perfil paper
+docker compose exec -T server curl -s -X POST http://127.0.0.1:8081/api/v1/auth/local/tokens \
   -H "Authorization: Bearer $OPERATOR_SESSION" -H 'Content-Type: application/json' \
   -d '{"name": "mi-agente", "profile": "paper", "expires_in_days": 30}'
+
+# Pro: lo mismo a través de la consola
+curl -s -X POST http://127.0.0.1:3002/api/v1/auth/local/login \
+  -H 'Content-Type: application/json' -d '{"password": "<tu contraseña>"}'
 ```
 
-El puerto de la API REST (`8081` en el contrato de `docs/product/api-contract.md`) puede ser distinto en tu instalación. El token de agente se muestra una sola vez al crearlo. Guárdalo como secreto y no lo pegues en repositorios. Se puede listar y revocar (`GET`/`DELETE /api/v1/auth/local/tokens`). Un token `live` no se puede crear sin licencia Pro válida.
+El token de agente se muestra una sola vez al crearlo. Guárdalo como secreto y no lo pegues en repositorios. Se puede listar y revocar (`GET`/`DELETE /api/v1/auth/local/tokens`). Un token `live` no se puede crear sin licencia Pro válida.
 
 ## 2. Listar tools
 

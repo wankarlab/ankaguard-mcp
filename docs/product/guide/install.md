@@ -1,6 +1,6 @@
 # Instalación con Docker
 
-> Estado: `deploy/product/install.sh` y `deploy/product/docker-compose.yml` existen y se verifican con `scripts/product/install_test.sh` (generación de `.env`, reinstalación, secretos distintos). La parte con Docker en marcha (arranque, salud en menos de 5 minutos, orden de papel) está escrita pero **no se ha ejecutado** en este entorno por falta de demonio Docker.
+> Verificado el 2026-11-17 con un clon limpio del repositorio: en Pro, el servidor respondió sano 3 minutos y 20 segundos después de `docker compose up -d --build`, con parte de la caché de Docker ya llena (con la caché vacía tarda más, sobre todo por GoCryptoTrader). Community también arranca sano. También se comprobó que funcionan el login del operador, el token de papel, una orden de papel y el rechazo por tope.
 
 ## Requisitos
 
@@ -47,7 +47,7 @@ La respuesta incluye `status`, `version`, `commit` y `edition`, y nada más. La 
 
 1. Establece la contraseña del operador. Se hace con el subcomando `operator set-password` del binario del servidor (es la única vía y exige acceso a la máquina).
 2. Inicia sesión como operador (`POST /api/v1/auth/local/login`, o la consola en Pro).
-3. Crea un token de agente de perfil `paper` (`POST /api/v1/auth/local/tokens`). Ver [mcp-clients.md](mcp-clients.md).
+3. Crea un token de agente de perfil `paper` (`POST /api/v1/auth/local/tokens`). La API REST no se publica en el anfitrión: en Pro se usa la consola y en Community `docker compose exec server curl ...`. Ver [mcp-clients.md](mcp-clients.md).
 
 ## Dinero real: desactivado por defecto
 
