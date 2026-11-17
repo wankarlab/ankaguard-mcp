@@ -1,0 +1,96 @@
+# Product stack (OpenSpec guarded-mcp-product, task 10.6, design D14).
+#
+#   ./install.sh                       # creates .env with random secrets (once)
+#   docker compose up -d --build
+#   curl -s http://127.0.0.1:10600/health
+#
+# Only the server (10600) and the console (3002) are published, and only on the
+# loopback interface of the host. GoCryptoTrader and Postgres are reachable
+# only inside the compose network. Secrets come from .env, never from this file.
+#
+# The console is the Pro edition: start it with `--profile pro`
+#   docker compose --profile pro up -d --build
+# and build the server with EDITION_TAGS=product,pro in .env (the default).
+
+name: trading-mcp-product
+
+services:
+  server:
+    build:
+      context: ../..
+      dockerfile: deploy/product/Dockerfile.server
+      args:
+        EDITION_TAGS: ${EDITION_TAGS:-product,pro}
+        VERSION: ${PRODUCT_VERSION:-dev}
+        COMMIT: ${PRODUCT_COMMIT:-unknown}
+    restart: unless-stopped
+    depends_on:
+      gct:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      GCT_ADDRESS: gct:9052
+      GCT_GRPC_ADDRESS: gct:9052
+      GCT_USERNAME: ${GCT_USERNAME}
+      GCT_PASSWORD: ${GCT_PASSWORD}
+      TRADING_CONFIG_DB_PASSWORD: ${TRADING_CONFIG_DB_PASSWORD}
+      CREDENTIAL_ENCRYPTION_KEY: ${CREDENTIAL_ENCRYPTION_KEY}
+      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN}
+      LICENSE_KEY: ${LICENSE_KEY:-}
+      # Origins the server accepts from the console (it must match CONSOLE_PORT).
+      CONSOLE_ORIGINS: ${CONSOLE_ORIGINS:-http://localhost:${CONSOLE_PORT:-3002},http://127.0.0.1:${CONSOLE_PORT:-3002}}
+    ports:
+      - "127.0.0.1:${SERVER_PORT:-10600}:10600"
+    volumes:
+      - server-data:/app/data
+
+  gct:
+    build:
+      context: .
+      dockerfile: Dockerfile.gct
+    restart: unless-stopped
+    environment:
+      GCT_USERNAME: ${GCT_USERNAME}
+      GCT_PASSWORD: ${GCT_PASSWORD}
+    expose:
+      - "9052"
+    volumes:
+      - gct-data:/data
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: trading
+      POSTGRES_DB: trading_config
+      POSTGRES_PASSWORD: ${TRADING_CONFIG_DB_PASSWORD}
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading -d trading_config"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  console:
+    profiles: ["pro"]
+    build:
+      context: ../../anka-arena
+      dockerfile: Dockerfile.product
+      args:
+        BACKEND_URL: http://server:8081
+        MCP_BACKEND_URL: http://server:10600
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "127.0.0.1:${CONSOLE_PORT:-3002}:3002"
+
+volumes:
+  server-data:
+  gct-data:
+  postgres-data:

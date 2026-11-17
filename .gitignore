@@ -1,0 +1,163 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+main
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# Environment variables
+.env*
+!.env.example
+!.env.kucoin.example
+!.env.mcp-trading.example
+!.env.launch.example
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+
+# Docker
+
+# Configuration files with secrets
+configs/production.yaml
+configs/staging.yaml
+
+# Build artifacts
+dist/
+build/
+
+# Test artifacts
+testdata/output/
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+
+# Local development
+.local/
+dev/
+
+# Large binaries and executables
+*.test
+/trading-mcp-server*
+ai-bot-llm
+ai-trading-bot
+ai.test
+config.test
+cost.test
+knowledge.test
+llm.test
+middleware.test
+monitoring.test
+prompts.test
+sentiment.test
+strategies.test
+trading.test
+validation.test
+test-llm-simple
+
+# Backup files
+*.backup
+*.bak
+
+# Node modules (if any)
+node_modules/
+
+# Temporary reports
+*.md.tmp
+DAILY_SUMMARY_*.md
+TASK_*.md
+
+# Odoo official core (external dependency)
+matp-odoo19/core/__pycache__/
+*.pyc
+
+# Agent workspace (large, machine-local)
+.claude/
+
+# Runtime data artifacts (regenerable, not source)
+data/models/
+data/config_backup/
+data/*.bak-*
+data/*.corrupt-bak-*
+data/*.malformed-*
+data/*.db-wal
+data/*.db-shm
+
+# Loose research/tool binaries built at repo root (compiled, not source)
+/launch-bot
+/edge-research
+/exit-research
+/funding-research
+/migrate-sqlite-to-pg
+/retrain
+/watchdog
+/xsec-bot
+/xsec-sim
+/xsec-live
+
+# iatb subproject build artifacts
+/iatb/iatb
+coverage*.out
+
+# Loose compiled binaries committed at repo root (research/debug tools, not source)
+/ai-test
+/backfill
+/backtest
+/cost-report
+/find-low-cost-pairs
+/list-kucoin-pairs
+/list-pairs-simple
+/optimize
+/seed-strategies
+/test-gct-client
+/test-grpc-direct
+/test-market-data
+/test-real-connection
+/validate-config
+
+# Debug scripts with embedded PII/secrets (kept locally, not tracked)
+/test-jwt-decode.py
+
+# matp-odoo19 real runtime config (contains db/admin passwords) — use odoo.conf.template
+matp-odoo19/config/odoo.conf

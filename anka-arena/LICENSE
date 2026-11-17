@@ -1,0 +1,58 @@
+ANKAGUARD MCP PRO EDITION - COMMERCIAL LICENSE
+
+Copyright (c) 2026 Wankarlab (the "Licensor"). All rights reserved.
+
+1. Scope. This license applies only to the files located in the directories
+   marked as "Pro" (see deploy/product/licenses/README.md) and to the Pro
+   edition build of the software (the "Pro Software"). All other files in this
+   repository are licensed under the Apache License, Version 2.0 (see
+   LICENSE-COMMUNITY).
+
+2. Grant. Subject to the terms below and to holding a valid license document
+   issued by the Licensor to you (the "License Document"), the Licensor grants
+   you a non-exclusive, non-transferable, non-sublicensable, revocable license
+   to install and use the Pro Software for your own internal purposes, for the
+   term and edition stated in the License Document.
+
+3. License Document required. Use of the Pro Software features (including real
+   money trading, the web console and the backtest lab) requires a valid
+   License Document. Without one, the software runs with Community edition
+   behavior only. The License Document is verified offline; the Pro Software
+   does not contact the Licensor for license purposes.
+
+4. Restrictions. You may not, and may not allow others to: (a) copy, distribute,
+   sell, rent, lease, sublicense or otherwise make the Pro Software available to
+   any third party; (b) share, publish or resell a License Document; (c) remove
+   or alter any license check, notice or protection; (d) use the Pro Software to
+   provide a hosted or managed service to third parties.
+
+5. Ownership. The Licensor retains all rights, title and interest in the Pro
+   Software. No rights are granted except as expressly stated here.
+
+6. No warranty. THE PRO SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+   KIND, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE AND NON-INFRINGEMENT. THE LICENSOR DOES NOT WARRANT ANY
+   TRADING RESULT OR PROFIT. THE SOFTWARE IS NOT FINANCIAL, INVESTMENT OR LEGAL
+   ADVICE. TRADING, INCLUDING WITH LEVERAGE, CAN LOSE ALL THE FUNDS INVOLVED.
+
+7. Limitation of liability. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE
+   LICENSOR SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL OR
+   CONSEQUENTIAL DAMAGES, OR FOR ANY TRADING LOSS, LOSS OF PROFIT OR LOSS OF
+   DATA, ARISING FROM THE USE OF OR INABILITY TO USE THE PRO SOFTWARE. THE
+   LICENSOR'S TOTAL LIABILITY SHALL NOT EXCEED THE FEES YOU PAID FOR THE
+   LICENSE DOCUMENT IN FORCE WHEN THE CLAIM AROSE.
+
+8. Term and termination. The license lasts until the expiry date in the License
+   Document unless terminated earlier for breach of this license. On
+   termination you must stop using the Pro Software. Expiry of a License
+   Document never prevents you from closing or reducing open positions through
+   the software.
+
+9. Third-party software. The software includes third-party components under
+   their own licenses (see THIRD_PARTY_NOTICES.md). Nothing here restricts
+   your rights under those licenses.
+
+10. Governing law. This license is governed by the laws of the Republic of
+    Ecuador. Any dispute shall be submitted to the competent courts of Ecuador,
+    without prejudice to mandatory consumer protection rules of your country
+    of residence.

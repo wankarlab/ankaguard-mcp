@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1
+# GoCryptoTrader daemon for the product (OpenSpec task 10.6).
+#
+# The product does not ship the daemon: it builds it from the upstream project
+# at the snapshot the server was developed against (123d39f, March 2026; see
+# docs/product/baseline.md). Building needs network access to GitHub.
+#
+#   docker build -f deploy/product/Dockerfile.gct -t trading-mcp-gct deploy/product
+# Upstream 123d39f requires Go 1.26 (the local copy only lowered the go
+# directive to 1.25; its .go files match upstream).
+ARG GO_IMAGE=golang:1.26-bookworm
+ARG RUNTIME_IMAGE=debian:bookworm-slim
+
+FROM ${GO_IMAGE} AS build
+ARG GCT_REF=123d39fde74722b42968fe9d510bc5e868773575
+RUN git clone https://github.com/thrasher-corp/gocryptotrader.git /src \
+ && cd /src && git checkout "${GCT_REF}"
+WORKDIR /src
+RUN CGO_ENABLED=0 go build -trimpath -o /out/gocryptotrader . \
+ && cp config_example.json /out/config_example.json
+
+FROM ${RUNTIME_IMAGE}
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates jq \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd --system --gid 10002 gct \
+ && useradd --system --uid 10002 --gid gct --home-dir /data --shell /usr/sbin/nologin gct
+COPY --from=build /out/gocryptotrader /usr/local/bin/gocryptotrader
+COPY --from=build /out/config_example.json /opt/gct/config_example.json
+COPY gct-entrypoint.sh /usr/local/bin/gct-entrypoint.sh
+RUN chmod 0755 /usr/local/bin/gct-entrypoint.sh && mkdir -p /data && chown gct:gct /data
+USER gct
+VOLUME ["/data"]
+EXPOSE 9052
+ENTRYPOINT ["/usr/local/bin/gct-entrypoint.sh"]

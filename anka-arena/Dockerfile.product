@@ -1,0 +1,57 @@
+# Imagen de la consola en modo producto (OpenSpec guarded-mcp-product, tarea 9.9).
+#
+#   docker build -f Dockerfile.product -t anka-console-product anka-arena/
+#
+# - Build standalone de Next con NEXT_PUBLIC_EDITION=product (la variable se
+#   incrusta en el build: no se puede cambiar al ejecutar la imagen).
+# - Next resuelve los rewrites de next.config.js al compilar, así que las URLs del
+#   servidor se pasan como ARG de build. Son direcciones, no secretos.
+# - Sin secretos en la imagen: no se copia ningún .env (ver
+#   Dockerfile.product.dockerignore) y el proceso corre sin privilegios.
+
+ARG NODE_IMAGE=node:20-alpine
+
+FROM ${NODE_IMAGE} AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY package.json package-lock.json ./
+# --legacy-peer-deps: npm 10 (node:20) rejects the optional peer @swc/helpers of
+# @swc/core that npm 11 accepts; the lockfile tree is installed unchanged.
+RUN npm ci --legacy-peer-deps
+
+FROM ${NODE_IMAGE} AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Servidor REST (/api) y servidor MCP (/ws, /health) a los que la consola reenvía.
+ARG BACKEND_URL=http://server:8081
+ARG MCP_BACKEND_URL=http://server:10600
+ENV BACKEND_URL=${BACKEND_URL} \
+    MCP_BACKEND_URL=${MCP_BACKEND_URL} \
+    NEXT_PUBLIC_EDITION=product \
+    NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+FROM ${NODE_IMAGE} AS runner
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3002 \
+    HOSTNAME=0.0.0.0
+
+# Usuario sin privilegios.
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup nodejs nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+EXPOSE 3002
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/login').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"
+
+# server.js lo genera `next build` con output: 'standalone'.
+CMD ["node", "server.js"]

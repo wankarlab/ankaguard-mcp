@@ -1,0 +1,367 @@
+server:
+  host: "0.0.0.0"  # Escucha en todas las interfaces para permitir acceso desde red
+  port: 10600
+  mode: "production"  # "production" or "sandbox" - REAL MONEY MODE
+  protocol: "http"  # "stdio" or "http" - CHANGED TO HTTP FOR TESTING
+  read_timeout: 30      # HTTP read timeout in seconds (can be overridden by SERVER_READ_TIMEOUT env var)
+  write_timeout: 120    # HTTP write timeout in seconds (can be overridden by SERVER_WRITE_TIMEOUT env var)
+  idle_timeout: 120     # HTTP idle timeout in seconds (can be overridden by SERVER_IDLE_TIMEOUT env var)
+  max_header_bytes: 1048576  # Max header size in bytes (can be overridden by SERVER_MAX_HEADER_BYTES env var)
+  tls:
+    enabled: false      # set true in production with valid certs
+    cert_file: ""       # path to TLS certificate
+    key_file: ""        # path to TLS private key
+
+# API Gateway Configuration (Unified endpoint for Flutter)
+gateway:
+  enabled: true
+  port: 9090  # Single port for Flutter client (avoiding Docker port conflicts)
+  mcp_server_url: "http://127.0.0.1:10600"
+  scalping_api_url: "http://127.0.0.1:10600"
+
+gocryptotrader:
+  grpc_address: "localhost:9052"  # Puede ser sobrescrito con GCT_ADDRESS env var
+  # username/password: NO hardcodear. Deben venir de GCT_USERNAME/GCT_PASSWORD
+  # (ver internal/mcp-trading/config/config.go Load()/Validate() — arranque falla si faltan).
+  timeout: 30s
+  max_retries: 3
+  retry_backoff: 2s
+
+risk_limits:
+  max_order_size_usd: 2.0  # Límite muy bajo para testing con $5
+  max_daily_loss_usd: 5.0  # Máximo $5 de pérdida
+  max_position_size_usd: 5.0  # Máximo $5 en posiciones
+  max_open_orders: 1  # 1 posición por par — no piramidación
+  max_exposure_per_pair_usd: 5.0  # Máximo $5 por par
+
+exchanges:
+  - name: "kucoin"
+    enabled: true  # ENABLED FOR LIVE TEST
+    sandbox: false  # REAL MONEY - KUCOIN PRODUCTION
+  - name: "binance"
+    enabled: false
+    sandbox: false
+  - name: "coinbase"
+    enabled: false
+    sandbox: true
+
+logging:
+  level: "info"  # "debug", "info", "warn", "error"
+  format: "json"  # "json" or "text"
+  output: "stdout"  # "stdout", "file", or "both"
+  file: "logs/trading-mcp.log"
+  max_size_mb: 100
+  max_backups: 5
+  max_age_days: 30
+
+monitoring:
+  prometheus_enabled: true
+  prometheus_port: 9090
+  health_check_interval: 30s
+  metrics_enabled: true
+
+audit:
+  enabled: true
+  log_file: "logs/audit.log"
+  log_all_requests: true
+  log_all_orders: true
+
+ai_bot:
+  # Desactivado 2026-10-03: scalper apagado durante la restauración de la DB y el redespliegue.
+  # Sin edge validado en dinero real; reactivar solo por decisión explícita del operador.
+  auto_start: false
+
+# Scalping MCP Tools Configuration
+scalping:
+  enabled: true  # REACTIVADO 2026-05-27
+  max_bots: 5  # Maximum number of concurrent scalping bots
+  
+  # Default strategies available for scalping
+  default_strategies:
+    - "rsi"
+    - "macd"
+    - "bollinger"
+    - "volume"
+  
+  # Default risk parameters for scalping operations (LIVE TEST WITH $5)
+  default_risk_params:
+    max_position_size_usd: 2.0  # Maximum $2 per trade for $5 test
+    max_daily_trades: 10  # Maximum 10 trades in 10 minutes
+    stop_loss_percent: 0.5  # Default stop loss percentage
+    take_profit_percent: 1.0  # Default take profit percentage
+    max_daily_loss_usd: 5.0  # Maximum $5 loss (all capital)
+    max_consecutive_losses: 3  # Stop after 3 consecutive losses
+    volatility_multiplier: 1.5  # ATR multiplier for stop loss
+    kelly_fraction: 0.25  # Kelly Criterion fraction (conservative)
+    risk_free_rate: 0.02  # Risk-free rate for calculations
+    confidence_threshold: 0.65  # Minimum confidence for signals
+  
+  # Signal filtering configuration
+  signal_filters:
+    min_confidence: 0.6  # Minimum confidence to return signal
+    max_signals_per_request: 20  # Maximum signals to return
+  
+  # Bot management configuration
+  bot_management:
+    max_concurrent_bots: 3  # Maximum bots running simultaneously
+    bot_check_interval_seconds: 5  # How often bots check for signals
+    auto_stop_on_daily_limit: true  # Auto-stop bot when daily limit reached
+  
+  # Futures trading configuration
+  futures:
+    enabled: true  # Enable futures trading support
+    default_margin_mode: "CROSSED"  # "CROSSED" or "ISOLATED"
+    max_leverage: 20  # Maximum allowed leverage (1-100)
+    position_refresh_interval: "10s"  # How often to refresh position cache
+    auto_set_margin_mode: true  # Automatically set margin mode if not configured
+    
+    # Futures-specific risk limits (override global limits for futures)
+    risk_limits:
+      max_leverage: 20  # Maximum leverage allowed
+      max_position_size_usd: 100.0  # Maximum position size for futures
+      max_total_exposure_usd: 500.0  # Maximum total exposure across all futures positions
+      min_margin_ratio: 0.2  # Minimum margin ratio to maintain (20%)
+      require_margin_check: true  # Check margin before placing orders
+
+# KuCoin Futures API Configuration
+kucoin:
+  futures:
+    # API credentials (loaded from environment variables)
+    api_key: "${KUCOIN_API_KEY}"
+    api_secret: "${KUCOIN_API_SECRET}"
+    api_password: "${KUCOIN_API_PASSWORD}"
+    
+    # API endpoints
+    base_url: "https://api.kucoin.com"
+    futures_url: "https://api-futures.kucoin.com"
+    
+    # Request configuration
+    timeout: "30s"
+    max_retries: 3
+    retry_backoff: "1s"
+    max_retry_delay: "10s"
+    
+    # Rate limiting
+    rate_limit_per_second: 10
+    burst_size: 20
+
+auth:
+  provider: "hmac"  # options: hmac, oidc-rantipay
+  hmac_secret_env: "KONG_JWT_SECRET"
+  oidc:
+    issuer: ""      # set RANTIPAY_OIDC_ISSUER
+    audience: ""    # set RANTIPAY_OIDC_AUDIENCE
+    jwks_cache_ttl: "1h"
+
+# AI Configuration overrides
+ai:
+  enabled: true
+  
+trading:
+  enabled: true
+  dry_run: false
+
+bot:
+  enabled: true
+  dry_run: false
+  auto_execute: true
+  autonomous_mode: false
+  # pair: "BTC-USDT" ← forzado temporalmente. ESPORTS-USDT no está en GCT y
+  # causa timeouts masivos que pausan el bot. Con pair_selection.enabled=true
+  # el master agent puede sobreescribir este valor con el top scoreado.
+  pair: "BTC-USDT"
+  exchange: "kucoin"
+  # RESPALDO (capital-relative-sizing): con bot.sizing.mode=capital_pct (default
+  # de la config dinámica) el tamaño real es bot.sizing.base_pct del capital de
+  # la cuenta, acotado por bot.sizing.min/max_notional_usd. trade_size_usd solo
+  # se usa en modo absolute o si la base de config dinámica no está disponible.
+  trade_size_usd: 2.0              # reducido de 3.0 para dejar margen a multi-par
+  leverage: 5
+  market_type: futures             # spot | futures | margin  (Phase 1 — futures is default)
+  mode_selection: auto             # auto | manual | hybrid   (auto = legacy leverage-driven routing)
+  confidence_threshold: 0.65
+  # RESPALDO: el tope diario efectivo es bot.max_daily_loss_percent del capital
+  # al inicio del día, recortado por bot.max_daily_loss_usd si es > 0. Este valor
+  # solo aplica en modo absolute o sin config dinámica.
+  max_daily_loss_usd: 5.0   # 2026-11-02: bajado de 20 al reactivar dinero real (cuenta ~27 USD)
+  max_open_positions: 1  # 1 posición máxima — esperar cierre antes de abrir otra
+  default_stop_loss_pct: 1.5
+  default_take_profit_pct: 3.0
+  analysis_interval_seconds: 30
+  monitor_interval_seconds: 10
+  max_position_duration_hours: 24
+  breakeven:
+    enabled: true
+    trigger_pct: 0.5    # move SL to breakeven after +0.5% profit
+    buffer_pct: 0.30    # ampliado de 0.05 → 0.30: deja respirar al trade,
+                        # antes mataba ganancias en ~0.05% de retroceso
+  trailing:
+    enabled: true
+    distance_pct: 0.4   # trail 0.4% behind highest price
+
+  # Dynamic sizing by signal confidence.
+  # When enabled, each trade picks the tier whose [min_confidence, max_confidence]
+  # contains the LLM consensus confidence and overrides size_usd / take_profit_pct /
+  # stop_loss_pct for that trade only. If no tier matches (or enabled=false),
+  # the bot falls back to trade_size_usd / default_take_profit_pct / default_stop_loss_pct.
+  # Tiers may be retuned at runtime — the file watcher reloads them without restart.
+  # RESPALDO: los tramos vivos son dynamic_sizing.tiers de la config dinámica; en
+  # modo capital_pct cada tramo usa size_pct (% del capital). size_usd solo vale
+  # en modo absolute; un tramo sin size_pct se convierte una vez contra el capital.
+  dynamic_sizing:
+    enabled: true
+    tiers:
+      - name: low                # 65–74% confidence: tight risk, quick TP
+        min_confidence: 0.65
+        max_confidence: 0.74
+        size_usd: 2.0
+        take_profit_pct: 2.0
+        stop_loss_pct: 1.2
+      - name: medium             # 75–84%: standard size, 2:1 R:R
+        min_confidence: 0.75
+        max_confidence: 0.84
+        size_usd: 3.5
+        take_profit_pct: 3.0
+        stop_loss_pct: 1.5
+      - name: high               # 85–94%: bigger size, let winners run
+        min_confidence: 0.85
+        max_confidence: 0.94
+        size_usd: 5.0
+        take_profit_pct: 4.5
+        stop_loss_pct: 1.8
+      - name: max                # 95–100%: max conviction
+        min_confidence: 0.95
+        max_confidence: 1.00
+        size_usd: 7.0
+        take_profit_pct: 6.0
+        stop_loss_pct: 2.0
+
+  # Smart pair selection: route to the highest-scored opportunity from the
+  # master agent at the start of each analysis cycle.
+  # Switching only happens when there is no open position (to avoid abandoning
+  # an active trade) and respects switch_cooldown_seconds to prevent flapping.
+  # fallback_pair empty (default) → bot PAUSES when master has no opportunities
+  # with score ≥ min_score, instead of falling back to a hardcoded pair.
+  pair_selection:
+    enabled: true
+    min_score: 0.35                  # revertido 0.32→0.35 (2026-05-24): operador prefiere postura conservadora; con el fix de volumen el universo ya trae pares con score 0.48-0.55, así que 0.35 no bloquea los buenos setups
+    switch_cooldown_seconds: 300     # at most one switch per 5 minutes
+    fallback_pair: ""                # empty = pause if no opportunities
+
+  # Partial take-profits (scale-out ladder).
+  # Each level fires once when the position's raw price-move % reaches tp_pct,
+  # closing close_pct of the *current* remaining size via a reduce-only market
+  # order. The final TP on the position keeps the last fraction protected.
+  # When move_sl_to_breakeven is true, the first level to fire also pulls the
+  # stop-loss to the entry price (and re-issues the exchange stop order).
+  # Levels are evaluated in order; tp_pct should ascend for sensible behavior.
+  partial_tp:
+    enabled: true
+    levels:
+      - tp_pct: 1.5              # at +1.5% close 50% and lock in breakeven
+        close_pct: 50
+        move_sl_to_breakeven: true
+      - tp_pct: 2.5              # at +2.5% close another 30% of remaining
+        close_pct: 30
+        move_sl_to_breakeven: false
+
+# =============================================================================
+# MULTI-PAIR / SWARM CONFIGURATION
+# =============================================================================
+# When enabled, the bot operates as a swarm of specialized bots, one per pair.
+# When disabled (default), the bot operates in legacy single-pair mode.
+multi_pair:
+  # FASE 1 (actual): enabled=false → Master escanea/puntúa pero NO spawna scalping bots.
+  # FASE 2 (paper):  enabled=true  + paper_trading.enabled=true → spawna bots en paper mode.
+  # FASE 3 (live):   enabled=true  + paper_trading.enabled=false → producción real.
+  # NOTA: scalping spawner desactivado por orden del operador — usar AI orchestrator en su lugar
+  # (ai_bot.multi_pair.enabled=true en PostgreSQL controla el orchestrator de AI bots)
+  enabled: false                       # scalping spawner OFF — AI orchestrator ON (ver ai_bot.multi_pair en DB)
+  max_concurrent_bots: 5               # aligned with scalping.max_bots; reduces scan-tick warnings
+  total_capital_usd: 35.0              # real deployable balance ~$35 USDT (was 50.0)
+  capital_allocation:
+    mode: weighted                     # weighted (stable) — dynamic needs WinRate data; equal|weighted|dynamic
+    rebalance_interval: 5m             # how often to redistribute capital
+    min_per_bot_usd: 3.0               # mínimo $3 por bot
+    max_per_bot_usd: 12.0              # máximo $12 por bot (capped for $35 account)
+    reserve_percent: 0.20              # 20% always liquid = ~$7 buffer (was 15%)
+    max_correlated_exposure: 0.50      # at most 50% in correlated pairs
+    min_pairs_for_full_deploy: 2       # deploy full capital with ≥2 pairs
+  pair_universe:
+    source: dynamic                    # dynamic | manual | hybrid
+    asset_type: futures                # futures | spot
+    quote_currency: USDT
+    top_n_by_volume: 50
+    cache_ttl: 15m
+    static_pairs: []                   # only if source=manual
+    exchange: kucoin
+    discovery_filters:
+      min_volume_24h_usd: 1000000
+      min_volatility_atr_pct: 0.3
+      max_volatility_atr_pct: 8.0
+      max_btc_correlation: 0.92
+      exclude_stablecoins: true
+      exclude: ["LAB-USDT", "ESPORTS-USDT", "ONDO-USDT", "BLEND-USDT", "UB-USDT", "ZEC-USDT"]  # not in GCT / margin errors
+  bot_lifecycle:
+    spawn_threshold: 0.35              # min normalized score (0-1) to spawn a bot
+    kill_threshold: 0.25               # below this score, kill the bot
+    cooldown_after_loss: 30m           # post-loss respawn cooldown per pair
+
+# =============================================================================
+# MASTER AGENT CONFIGURATION
+# =============================================================================
+# The Master Agent autonomously selects which pairs to trade and generates
+# per-pair configurations. Disable to run bots manually.
+master_agent:
+  enabled: true                        # REACTIVADO 2026-05-27 — solo para pair selection del AITradingBot
+  auto_start: true                     # REACTIVADO 2026-05-27 — multi_pair=false previene spawn de scalping bots
+  # NOTE: multi_pair.enabled stays false so Master scans + scores opportunities
+  # but does NOT actually spawn bots. This validates scanning/scoring/persistence
+  # in isolation before flipping multi_pair on.
+  loop_interval: 5m                    # how often the Master scans the market
+  scan_top_n: 50                       # ampliado de 20 → 50 para mayor universo
+  exchange: kucoin                     # exchange to scan
+  scoring_weights:
+    # rebalanced 2026-05-18: rotation should follow PnL, not just structure
+    volatility: 0.15
+    volume: 0.10
+    trend_strength: 0.20
+    sentiment: 0.05               # placeholder source — kept low until real sentiment wired
+    regime_match: 0.15
+    btc_correlation_penalty: 0.05
+    recent_loss_penalty: 0.20     # 4× — bot rotates faster off losing pairs
+    profit_factor: 0.10           # new — expectancy %/trade rewards profitable pairs
+  feedback:
+    enabled: true
+    feedback_interval: 1h              # how often Master adjusts its own weights
+    min_trades_for_feedback: 10
+  paper_trading:
+    enabled: false                     # disabled: bots go real immediately (dry_run=false)
+    duration: 48h                      # paper trade for 48h before going real
+  llm_consensus:
+    enabled: true
+    min_providers: 1
+    timeout: 30s
+
+# =============================================================================
+# MULTI-USER BOT MANAGER (MU-8.6)
+# Set enabled: true to activate per-user bot isolation.
+# When false (default) the legacy single-bot path is used unchanged.
+# =============================================================================
+multi_user:
+  enabled: true  # ACTIVADO 2026-05-25: per-user BotManager/SessionManager en producción. El bot singleton (legacy) sigue corriendo; esto añade los endpoints /api/v1/bot/* por usuario.
+
+# =============================================================================
+# POSTGRESQL CONFIG DB (TC-1.1)
+# =============================================================================
+postgres:
+  config_db:
+    host: localhost
+    port: 15432
+    database: rantipay_trading_config
+    user: rantipay_trading
+    password: "${TRADING_CONFIG_DB_PASSWORD}"
+    max_connections: 10
+    min_connections: 2
+    max_conn_lifetime: 1h
+    health_check_period: 30s

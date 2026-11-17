@@ -1,0 +1,95 @@
+rules:
+  - id: MAX_RISK_PER_TRADE
+    name: "Maximum Risk Per Trade"
+    category: risk_management
+    severity: CRITICAL
+    priority: 100
+    enabled: true
+    condition: "RiskPercent <= 1.0"
+    message: "Risk per trade must not exceed 1% of capital"
+    metadata:
+      max_value: 1.0
+      unit: percent
+      
+  - id: MIN_RISK_REWARD
+    name: "Minimum Risk-Reward Ratio"
+    category: risk_management
+    severity: CRITICAL
+    priority: 95
+    enabled: true
+    condition: "RiskRewardRatio >= 1.5"
+    message: "Risk-reward ratio must be at least 1:1.5"
+    metadata:
+      min_value: 1.5
+      
+  - id: MAX_POSITION_SIZE
+    name: "Maximum Position Size"
+    category: risk_management
+    severity: HIGH
+    priority: 90
+    enabled: true
+    condition: "PositionSize <= 10000"
+    message: "Position size must not exceed $10,000"
+    metadata:
+      max_value: 10000
+      unit: usd
+      
+  - id: MAX_LEVERAGE_BTC
+    name: "Maximum Leverage for BTC/ETH"
+    category: risk_management
+    severity: CRITICAL
+    priority: 85
+    enabled: true
+    condition: "Leverage <= 10.0"
+    message: "Leverage for BTC/ETH must not exceed 10x"
+    metadata:
+      max_value: 10.0
+      applies_to: ["BTCUSDT", "ETHUSDT"]
+      
+  - id: MAX_LEVERAGE_ALTS
+    name: "Maximum Leverage for Altcoins"
+    category: risk_management
+    severity: CRITICAL
+    priority: 85
+    enabled: true
+    condition: "Leverage <= 5.0"
+    message: "Leverage for altcoins must not exceed 5x"
+    metadata:
+      max_value: 5.0
+      applies_to: ["alts"]
+      
+  - id: STOP_LOSS_REQUIRED
+    name: "Stop Loss Required"
+    category: risk_management
+    severity: CRITICAL
+    priority: 100
+    enabled: true
+    condition: "StopLossPercent > 0"
+    message: "Every trade must have a stop loss"
+    metadata:
+      required: true
+      
+  - id: STOP_LOSS_MAX_DISTANCE
+    name: "Maximum Stop Loss Distance"
+    category: risk_management
+    severity: HIGH
+    priority: 80
+    enabled: true
+    condition: "StopLossPercent <= 5.0"
+    message: "Stop loss must not be more than 5% away"
+    metadata:
+      max_value: 5.0
+      unit: percent
+      
+  - id: DAILY_LOSS_LIMIT
+    name: "Daily Loss Limit"
+    category: circuit_breaker
+    severity: CRITICAL
+    priority: 100
+    enabled: true
+    condition: "DailyLoss <= 3.0"
+    message: "Daily loss must not exceed 3% of capital"
+    metadata:
+      max_value: 3.0
+      unit: percent
+      action: halt_trading

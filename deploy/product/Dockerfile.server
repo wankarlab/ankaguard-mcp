@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1
+# Product server image (OpenSpec guarded-mcp-product, tasks 10.5 and 10.12).
+#
+#   docker build -f deploy/product/Dockerfile.server -t trading-mcp-product \
+#     --build-arg EDITION_TAGS=product,pro --build-arg VERSION=1.0.0 --build-arg COMMIT=$(git rev-parse --short HEAD) .
+#
+# - Build context: the repository root (the export has the same layout).
+# - EDITION_TAGS selects the edition: "product" (Community) or "product,pro".
+#   With the "pro" tag the XSEC backtest lab (cmd/xsec-sim) is added to the image.
+# - CGO is on because the SQLite driver (mattn/go-sqlite3) needs it; the build
+#   stage has gcc, the runtime stage only needs libc.
+# - Runs as a non-root user; state lives in /app/data (volume).
+# - No secrets in the image: the server reads them from the environment.
+
+ARG GO_IMAGE=golang:1.25-bookworm
+ARG RUNTIME_IMAGE=debian:bookworm-slim
+
+FROM ${GO_IMAGE} AS build
+ARG EDITION_TAGS=product,pro
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_TIME=unknown
+ENV CGO_ENABLED=1 GOFLAGS=-trimpath
+WORKDIR /src
+
+# Dependencies first, so source changes do not redownload modules.
+COPY go.mod go.sum ./
+COPY gocryptotrader/go.mod gocryptotrader/go.sum ./gocryptotrader/
+RUN go mod download
+
+COPY . .
+RUN set -eux; \
+    PKG=github.com/rantipay/trading-mcp/internal/version; \
+    LDFLAGS="-s -w -X ${PKG}.Version=${VERSION} -X ${PKG}.GitCommit=${COMMIT} -X ${PKG}.BuildTime=${BUILD_TIME}"; \
+    mkdir -p /out; \
+    go build -tags "${EDITION_TAGS}" -ldflags "${LDFLAGS}" -o /out/trading-mcp-server ./cmd/trading-mcp-server; \
+    case ",${EDITION_TAGS}," in \
+      *,pro,*) go build -tags "${EDITION_TAGS}" -ldflags "${LDFLAGS}" -o /out/xsec-sim ./cmd/xsec-sim ;; \
+    esac
+
+FROM ${RUNTIME_IMAGE}
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd --system --gid 10001 trading \
+ && useradd --system --uid 10001 --gid trading --home-dir /app --shell /usr/sbin/nologin trading
+
+WORKDIR /app
+COPY --from=build /out/ /usr/local/bin/
+COPY configs/product/config.yaml /app/configs/product/config.yaml
+COPY migrations/trading-config /app/migrations/trading-config
+
+# The shipped config keeps Postgres off (host ""); in the container it is the
+# "postgres" service of docker-compose. Nothing else is changed.
+RUN sed -i 's|^\(    host: \)""|\1"postgres"|' /app/configs/product/config.yaml \
+ && grep -q 'host: "postgres"' /app/configs/product/config.yaml \
+ && mkdir -p /app/data /app/logs \
+ && chown -R trading:trading /app
+
+# Inside the container the server must listen on all interfaces; docker-compose
+# publishes the port on 127.0.0.1 of the host only.
+ENV MCP_BIND_ADDRESS=0.0.0.0 \
+    AUTH_DATA_DIR=/app/data/auth \
+    RANTIPAY_ENV=production
+
+USER trading
+VOLUME ["/app/data"]
+EXPOSE 10600
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
+  CMD curl -fsS http://127.0.0.1:10600/health >/dev/null || exit 1
+
+ENTRYPOINT ["trading-mcp-server"]
+CMD ["-config", "/app/configs/product/config.yaml"]

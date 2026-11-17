@@ -1,0 +1,89 @@
+name: CI
+
+# Workflow of the exported product repository (OpenSpec guarded-mcp-product,
+# task 10.11). It is installed by scripts/product/export.sh as
+# .github/workflows/ci.yml. The export is a standalone module: no platform or
+# iatb, GoCryptoTrader resolved through the bundled ./gocryptotrader.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go (${{ matrix.label }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: community
+            tags: product
+          - label: pro
+            tags: product,pro
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Module is tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: Build
+        run: go build -tags '${{ matrix.tags }}' ./...
+
+      - name: Vet
+        # -lostcancel=false: known discarded cancel functions in
+        # cmd/trading-mcp-server/main.go, tracked separately.
+        run: go vet -lostcancel=false -tags '${{ matrix.tags }}' ./...
+
+      - name: No private dependencies
+        run: |
+          if go list -deps -tags '${{ matrix.tags }}' ./... | grep -E 'rantipay/(iatb|platform)'; then
+            echo "the product must not depend on iatb or platform"; exit 1
+          fi
+
+      - name: Test
+        # Includes the boot test of the product binary.
+        run: go test -short -count=1 -tags '${{ matrix.tags }}' ./...
+
+      - name: Release license key is not the placeholder
+        run: go test -count=1 -tags release -run TestReleaseKeyIsNotPlaceholder ./internal/license
+
+  hygiene:
+    name: Secrets gate and scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Secrets and artifacts gate on the repository
+        run: |
+          scripts/product/secrets_gate_test.sh
+          scripts/product/secrets_gate.sh .
+
+      - name: Installer test (no Docker)
+        run: scripts/product/install_test.sh
+
+      - name: Compose file is valid
+        run: |
+          cp deploy/product/docker-compose.yml /tmp/docker-compose.yml
+          deploy/product/install.sh /tmp
+          (cd /tmp && docker compose --profile pro config -q)
+
+  docker:
+    name: Server image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Pro server image
+        run: docker build -f deploy/product/Dockerfile.server --build-arg EDITION_TAGS=product,pro -t trading-mcp-product .
+      - name: Binaries are in the image
+        run: docker run --rm --entrypoint sh trading-mcp-product -c 'trading-mcp-server -version && test -x /usr/local/bin/xsec-sim'

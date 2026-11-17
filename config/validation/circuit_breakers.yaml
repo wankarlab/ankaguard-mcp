@@ -1,0 +1,114 @@
+# Circuit-breaker rules. Rules with `metadata.trigger: true` state the condition
+# that fires the breaker ("DailyLoss >= 3.0"); the other rules state what must
+# hold for the trade to pass. Portfolio percentages: DailyLoss and TotalDrawdown
+# are % of capital.
+rules:
+  - id: DAILY_LOSS_HALT
+    name: "Daily Loss Circuit Breaker"
+    category: circuit_breaker
+    severity: CRITICAL
+    priority: 100
+    enabled: true
+    condition: "DailyLoss >= 3.0"
+    message: "Trading halted: Daily loss limit of 3% reached"
+    metadata:
+      trigger: true   # the condition states when the breaker FIRES
+      threshold: 3.0
+      unit: percent
+      action: halt_trading
+      cooldown: 24h
+      
+  - id: DRAWDOWN_HALT
+    name: "Maximum Drawdown Circuit Breaker"
+    category: circuit_breaker
+    severity: CRITICAL
+    priority: 100
+    enabled: true
+    condition: "TotalDrawdown >= 10.0"
+    message: "Trading halted: Maximum drawdown of 10% reached"
+    metadata:
+      trigger: true   # the condition states when the breaker FIRES
+      threshold: 10.0
+      unit: percent
+      action: halt_trading
+      cooldown: 48h
+      
+  - id: CONSECUTIVE_LOSSES_HALT
+    name: "Consecutive Losses Circuit Breaker"
+    category: circuit_breaker
+    severity: CRITICAL
+    priority: 95
+    enabled: true
+    condition: "ConsecutiveLosses >= 5"
+    message: "Trading halted: 5 consecutive losses reached"
+    metadata:
+      trigger: true   # the condition states when the breaker FIRES
+      threshold: 5
+      action: halt_trading
+      cooldown: 12h
+      
+  - id: CONSECUTIVE_LOSSES_WARNING
+    name: "Consecutive Losses Warning"
+    category: circuit_breaker
+    severity: HIGH
+    priority: 90
+    enabled: true
+    condition: "ConsecutiveLosses >= 3"
+    message: "Warning: 3 consecutive losses - reduce position size by 50%"
+    metadata:
+      trigger: true   # the condition states when the breaker FIRES
+      threshold: 3
+      action: reduce_position_size
+      reduction: 0.5
+      
+  - id: DAILY_LOSS_WARNING
+    name: "Daily Loss Warning"
+    category: circuit_breaker
+    severity: HIGH
+    priority: 85
+    enabled: true
+    condition: "DailyLoss >= 2.0"
+    message: "Warning: Daily loss approaching limit (2% of 3% max)"
+    metadata:
+      trigger: true   # the condition states when the breaker FIRES
+      threshold: 2.0
+      unit: percent
+      action: warning
+      
+  - id: DRAWDOWN_WARNING
+    name: "Drawdown Warning"
+    category: circuit_breaker
+    severity: HIGH
+    priority: 85
+    enabled: true
+    condition: "TotalDrawdown >= 7.0"
+    message: "Warning: Drawdown approaching limit (7% of 10% max)"
+    metadata:
+      trigger: true   # the condition states when the breaker FIRES
+      threshold: 7.0
+      unit: percent
+      action: warning
+      
+  - id: MAX_OPEN_POSITIONS
+    name: "Maximum Open Positions"
+    category: circuit_breaker
+    severity: HIGH
+    priority: 80
+    enabled: true
+    condition: "OpenPositions <= 3"
+    message: "Maximum 3 correlated positions allowed simultaneously"
+    metadata:
+      max_value: 3
+      reason: "Limit correlation risk"
+      
+  - id: VOLATILITY_HALT
+    name: "Extreme Volatility Circuit Breaker"
+    category: circuit_breaker
+    severity: HIGH
+    priority: 75
+    enabled: false
+    condition: "Volatility != EXTREME"
+    message: "Trading restricted during extreme volatility"
+    metadata:
+      action: restrict_trading
+      reason: "Protect against abnormal market conditions"

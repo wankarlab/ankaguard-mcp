@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rantipay.com/schemas/strategy_spec/v1",
+  "title": "StrategySpec",
+  "description": "Declarative content-addressed strategy document for the AnkaAI trading-mcp darwinian funnel.",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "scope", "entry", "exit", "risk_limits", "indicators"],
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "v1"
+    },
+    "kind": {
+      "const": "StrategySpec"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "spec_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 hex content-hash; set by the server after ContentHash(), not by the client."
+        },
+        "name":            { "type": "string", "minLength": 1 },
+        "author":          { "type": "string" },
+        "revision":        { "type": "integer", "minimum": 0 },
+        "parent_revision": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "validating", "validated", "rejected", "live", "demoted"]
+        },
+        "description": { "type": "string" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "required": ["exchange", "timeframes"],
+      "properties": {
+        "pairs":       { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "exchange":    { "type": "string", "minLength": 1 },
+        "market_type": { "type": "string", "enum": ["spot", "futures", "margin"] },
+        "timeframes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "max_bots":    { "type": "integer", "minimum": 0 }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "required": ["type", "confidence_threshold"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["pullback", "breakout", "momentum", "mean_reversion"]
+        },
+        "confidence_threshold": { "type": "number", "minimum": 0.5, "maximum": 1.0 },
+        "min_confluence_factors": { "type": "integer", "minimum": 1 },
+        "order_type": { "type": "string", "enum": ["market", "limit"] }
+      }
+    },
+    "exit": {
+      "type": "object",
+      "required": ["take_profit_pct", "stop_loss_pct"],
+      "properties": {
+        "take_profit_pct": { "type": "number", "exclusiveMinimum": 0 },
+        "stop_loss_pct":   { "type": "number", "exclusiveMinimum": 0 },
+        "tp_levels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["price_pct", "size_pct"],
+            "properties": {
+              "price_pct": { "type": "number", "exclusiveMinimum": 0 },
+              "size_pct":  { "type": "number", "exclusiveMinimum": 0, "maximum": 100 }
+            }
+          }
+        },
+        "breakeven": {
+          "type": "object",
+          "properties": {
+            "enabled":     { "type": "boolean" },
+            "trigger_pct": { "type": "number", "minimum": 0 },
+            "buffer_pct":  { "type": "number", "minimum": 0 }
+          }
+        },
+        "trailing": {
+          "type": "object",
+          "properties": {
+            "enabled":      { "type": "boolean" },
+            "distance_pct": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    },
+    "risk_limits": {
+      "type": "object",
+      "properties": {
+        "max_position_size_usd": { "type": "number", "exclusiveMinimum": 0 },
+        "leverage":              { "type": "integer", "minimum": 0, "maximum": 20 },
+        "max_daily_loss_usd":    { "type": "number", "exclusiveMinimum": 0 },
+        "max_open_positions":    { "type": "integer", "minimum": 1 },
+        "funding_rate_limits": {
+          "type": "object",
+          "properties": {
+            "max_positive": { "type": "number", "minimum": -1, "maximum": 1 },
+            "max_negative": { "type": "number", "minimum": -1, "maximum": 1 }
+          }
+        }
+      }
+    },
+    "indicators": {
+      "type": "object",
+      "properties": {
+        "lookback_candles":  { "type": "integer", "minimum": 1 },
+        "rsi_period":        { "type": "integer", "minimum": 2 },
+        "macd_fast":         { "type": "integer", "minimum": 1 },
+        "macd_slow":         { "type": "integer", "minimum": 1 },
+        "macd_signal":       { "type": "integer", "minimum": 1 },
+        "bollinger_period":  { "type": "integer", "minimum": 2 },
+        "bollinger_stddev":  { "type": "number",  "exclusiveMinimum": 0 },
+        "atr_period":        { "type": "integer", "minimum": 1 },
+        "ema_period":        { "type": "integer", "minimum": 1 }
+      }
+    },
+    "ml": {
+      "type": "object",
+      "properties": {
+        "gbm_gate_enabled": { "type": "boolean" },
+        "model_id":         { "type": "string" },
+        "min_proba":        { "type": "number", "minimum": 0.5, "maximum": 1.0 },
+        "shadow_only":      { "type": "boolean" }
+      },
+      "if":   { "properties": { "gbm_gate_enabled": { "const": true } } },
+      "then": { "required": ["model_id", "min_proba"] }
+    },
+    "regime": {
+      "type": "object",
+      "properties": {
+        "allowed_regimes": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["TRENDING", "BREAKOUT", "RANGING", "UNKNOWN"] }
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "description": "STATUS-ONLY — written only by the walk-forward validator, never by the client.",
+      "properties": {
+        "verdict":      { "type": "string", "enum": ["certified", "rejected"] },
+        "agg_pf":       { "type": "number" },
+        "consistency":  { "type": "number" },
+        "worst_dd":     { "type": "number" },
+        "n_trades":     { "type": "integer" },
+        "expires_at":   { "type": "string", "format": "date-time" },
+        "cost_model_id":{ "type": "string" }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "oos_window_days": { "type": "integer", "minimum": 1 },
+        "warmup_candles":  { "type": "integer", "minimum": 1 }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "timeout_seconds": { "type": "integer", "minimum": 1 },
+        "max_drift_pct":   { "type": "number",  "minimum": 0 },
+        "slippage_pct":    { "type": "number",  "minimum": 0 }
+      }
+    }
+  }
+}

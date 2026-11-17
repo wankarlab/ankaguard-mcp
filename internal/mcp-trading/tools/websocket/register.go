@@ -1,0 +1,46 @@
+package websocket
+
+import (
+	"github.com/rantipay/trading-mcp/internal/mcp-trading/gctclient"
+	"github.com/rantipay/trading-mcp/internal/mcp-trading/server"
+	"github.com/sirupsen/logrus"
+)
+
+var logger *logrus.Logger
+
+// InitLogger initializes the package logger
+func InitLogger(log *logrus.Logger) {
+	if log != nil {
+		logger = log
+	} else {
+		logger = logrus.New()
+		logger.SetFormatter(&logrus.JSONFormatter{})
+	}
+}
+
+// RegisterAll registers all WebSocket management tools
+func RegisterAll(srv *server.MCPServer, client *gctclient.Client) error {
+	return RegisterAllWithLogger(srv, client, nil)
+}
+
+// RegisterAllWithLogger registers all WebSocket management tools with a custom logger
+func RegisterAllWithLogger(srv *server.MCPServer, client *gctclient.Client, log *logrus.Logger) error {
+	// Initialize the package logger
+	InitLogger(log)
+
+	tools := []server.Tool{
+		// WebSocket Subscription Management
+		NewSubscribeMarketDataTool(client),
+		NewGetActiveSubscriptionsTool(client),
+		NewManageUserSubscriptionsTool(client),
+		NewGetWebSocketStatusTool(client),
+	}
+
+	for _, tool := range tools {
+		if err := srv.RegisterTool(tool); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: StrategySpec
+
+metadata:
+  name: sei-usdt-trendfollow-5m
+  description: "Trend-follow pullback on SEI-USDT 5m — the only pair certified by walk-forward OOS as of 2026-06"
+  revision: 1
+
+scope:
+  pairs:
+    - SEI-USDT
+  exchange: kucoin
+  market_type: futures
+  timeframes:
+    - 5m
+    - 15m
+
+entry:
+  type: pullback
+  confidence_threshold: 0.82
+  order_type: market
+  min_confluence_factors: 3
+
+exit:
+  take_profit_pct: 1.2
+  stop_loss_pct: 0.9
+  tp_levels:
+    - price_pct: 0.6
+      size_pct: 50
+    - price_pct: 1.2
+      size_pct: 50
+  breakeven:
+    enabled: true
+    trigger_pct: 0.4
+    buffer_pct: 0.05
+  trailing:
+    enabled: true
+    distance_pct: 0.35
+
+risk_limits:
+  max_position_size_usd: 2.0
+  leverage: 5
+  max_daily_loss_usd: 5.0
+  max_open_positions: 1
+
+indicators:
+  lookback_candles: 120
+  rsi_period: 14
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  ema_period: 50
+
+ml:
+  gbm_gate_enabled: true
+  model_id: gbm_v1_kucoin_futures
+  min_proba: 0.62
+  shadow_only: false
+
+regime:
+  allowed_regimes:
+    - TRENDING
+    - BREAKOUT
+
+validation: {}
+
+data:
+  oos_window_days: 21
+  warmup_candles: 200
+
+execution:
+  timeout_seconds: 10
+  max_drift_pct: 3.0
+  slippage_pct: 0.05

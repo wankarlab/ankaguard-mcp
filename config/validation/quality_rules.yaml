@@ -1,0 +1,70 @@
+rules:
+  - id: MIN_CONFLUENCE
+    name: "Minimum Confluence Factors"
+    category: trade_quality
+    severity: CRITICAL
+    priority: 95
+    enabled: true
+    condition: "ConfluenceCount >= 3"
+    message: "Trade must have at least 3 confluence factors"
+    metadata:
+      min_value: 3
+      description: "Multiple independent factors must support the trade"
+      
+  - id: OPTIMAL_CONFLUENCE
+    name: "Optimal Confluence Count"
+    category: trade_quality
+    severity: LOW
+    priority: 50
+    enabled: true
+    condition: "ConfluenceCount >= 5"
+    message: "Trade has optimal confluence (5+ factors)"
+    metadata:
+      optimal_value: 5
+      
+  - id: PRICE_RELATIONSHIP_LONG
+    name: "Valid Price Relationship for LONG"
+    category: trade_quality
+    severity: CRITICAL
+    priority: 100
+    enabled: true
+    condition: "StopLoss < EntryPrice"
+    message: "For LONG trades, stop loss must be below entry"
+    metadata:
+      direction: LONG
+      
+  - id: PRICE_RELATIONSHIP_SHORT
+    name: "Valid Price Relationship for SHORT"
+    category: trade_quality
+    severity: CRITICAL
+    priority: 100
+    enabled: true
+    condition: "StopLoss > EntryPrice"
+    message: "For SHORT trades, stop loss must be above entry"
+    metadata:
+      direction: SHORT
+      
+  - id: REALISTIC_TARGET
+    name: "Realistic Take Profit Target"
+    category: trade_quality
+    severity: MEDIUM
+    priority: 70
+    enabled: true
+    condition: "RiskRewardRatio <= 5.0"
+    message: "Take profit target should be realistic (R:R <= 5:1)"
+    metadata:
+      max_value: 5.0
+      reason: "Extremely high R:R targets are often unrealistic"
+      
+  - id: CONFIDENCE_ALIGNMENT
+    name: "Confidence Matches Trade Quality"
+    category: trade_quality
+    severity: LOW
+    priority: 60
+    enabled: true
+    condition: "ConfluenceCount >= 3"
+    message: "Trade confidence should align with confluence count"
+    metadata:
+      high_confidence_min: 5
+      medium_confidence_min: 3
+      low_confidence_max: 3

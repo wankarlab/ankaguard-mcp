@@ -1,0 +1,73 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Build artifacts
+bin/
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Logs
+logs/
+*.log
+
+# Test files
+*_test.go
+tests/
+test-scripts/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Environment files (also the product install's deploy/product/.env)
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Local data (SQLite databases, auth secrets, license state)
+data/
+**/data/*.db
+
+# Console build and dependencies
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Archive
+archive/
+
+# Load tests
+load-tests/
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+
+# Bot scripts (no necesarios en imagen)
+bot-directo-kucoin/
+scripts/
