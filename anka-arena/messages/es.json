@@ -959,7 +959,7 @@
     "scanning": "Escaneando… {seconds}s",
     "bio_tap": "Toca para autenticar con biometría",
     "friction_note": "fricción proporcional al riesgo",
-    "cancel": "cancelar",
+    "cancel": "Cancelar",
     "ring1_confirm_desc": "Congela una estrategia. Las posiciones abiertas se mantienen; no se abren nuevas.",
     "ring2_confirm_desc": "Aísla un tenant. El usuario queda suspendido; sus posiciones se congelan.",
     "freezing": "Congelando…",

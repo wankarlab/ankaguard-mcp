@@ -959,7 +959,7 @@
     "scanning": "Scanning… {seconds}s",
     "bio_tap": "Tap to authenticate with biometrics",
     "friction_note": "friction proportional to risk",
-    "cancel": "cancel",
+    "cancel": "Cancel",
     "ring1_confirm_desc": "Freezes a strategy. Open positions are kept; no new ones are opened.",
     "ring2_confirm_desc": "Isolates a tenant. The user is suspended; their positions are frozen.",
     "freezing": "Freezing…",

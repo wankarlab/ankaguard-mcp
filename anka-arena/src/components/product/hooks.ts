@@ -4,10 +4,10 @@ import useSWR from 'swr';
 import { useUIStore } from '@/stores/ui';
 import { getLicense, getProductStatus, type LicenseStatus, type ProductStatus } from '@/lib/product-api';
 
-// Both requests need an operator session. Without one they are not sent: a
-// 401 fetched on the login screen would otherwise stay cached (no retry on
-// error) and show "unknown mode" after signing in until the page reloads.
-// The keys stay plain strings so mutate('product:license') keeps working.
+// Both requests need an operator session: without one they are not sent.
+// ProductLogin revalidates every key on sign-in, which also covers a 401
+// cached from an earlier session. The keys stay plain strings so
+// mutate('product:license') keeps working.
 
 /** License status; shared SWR key so every screen reuses one request. */
 export function useLicense() {

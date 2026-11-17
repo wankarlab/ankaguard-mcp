@@ -5,7 +5,7 @@
 // instructions), `external` renders the existing login untouched.
 
 import { useEffect, useState, type ReactNode } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { Spinner } from '@/components/ui/Spinner';
@@ -66,6 +66,7 @@ function PasswordForm() {
   const t = useTranslations('Product');
   const router = useRouter();
   const loginFn = useUIStore((s) => s.login);
+  const { mutate } = useSWRConfig();
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,6 +92,10 @@ function PasswordForm() {
       const claims = await loginLocal(password);
       setPassword('');
       loginFn(claims.role, claims.kyc);
+      // A new session invalidates everything fetched before it: a 401 cached
+      // from an earlier or expired session (no retry on error) would otherwise
+      // keep showing "unknown mode" or a locked screen until a reload.
+      void mutate(() => true);
       router.push(PRODUCT_HOME);
     } catch (err) {
       if (err instanceof LocalLoginError) {
